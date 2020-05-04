@@ -37,7 +37,7 @@
  
 typedef struct {
     int active;
-    double  x, y, dx, dy, bullet_phi;
+    double  x, y, dx, dy, bullet_phi,bsizex,bsizey;
 }  Bullet;
  
 static int flag = 0; 
@@ -59,11 +59,12 @@ typedef struct Coords {
 } Coords;
  
 typedef struct {
-    double  x, y, phi, dx, dy, vmax, vmax2, radius;
+    double  x, y, phi, dx, dy, vmax, vmax2, sizex,sizey;
 } Player;
 
 typedef struct {
-    double  x, y, phi, dx, dy, vmax, vmax2, radius;
+    double  x, y, phi, dx, dy, vmax, vmax2, sizex,sizey;
+    bool Destroyed;
 } Enemy;
  
 /* -- function prototypes --------------------------------------------------- */
@@ -83,7 +84,7 @@ void drawEnemy(Enemy *e);
 void movePlayer ();
 void moveBullet();
 void checkMapBoundries ();
- 
+void DoCollision(Enemy *e); 
 // Display
 void display ();
 void myReshape (int, int);
@@ -149,11 +150,14 @@ static void initialize () {
     player.vmax = MAX_VELO_PLAYER;
     player.vmax2 = MAX_VELO_PLAYER * MAX_VELO_PLAYER;
 
+    enemy.Destroyed = false;
     enemy.x = 0;
     enemy.y = win.height/2.0;
     enemy.dx = enemy. dy = 0;
     enemy.vmax = MAX_VELO_PLAYER;
     enemy.vmax2 = MAX_VELO_PLAYER * MAX_VELO_PLAYER;
+    enemy.sizex = 5;
+    enemy.sizey = 5;
  
 }
  
@@ -237,7 +241,6 @@ void myTimer (int value) {
     movePlayer();
     moveBullet();
     checkMapBoundries();
- 
     glutPostRedisplay();
     glutTimerFunc(30, myTimer, value);      /* 30 frames per second */
  
@@ -327,6 +330,8 @@ void moveBullet () {
                 bullets[i].bullet_phi = player.phi;
                 bullets[i].dx = -MAX_VELO_BULLET * sin(player.phi);
                 bullets[i].dy = MAX_VELO_BULLET * cos(player.phi);
+                bullets[i].bsizex = 3;
+                bullets[i].bsizey = 3;
                 break;
             }
         }
@@ -358,7 +363,7 @@ void drawBullet (Bullet *b) {
     glPushMatrix();
         myTranslate2D(b->x, b->y);
         myRotate2D(b->bullet_phi);
-        myScale2D(1.0f, 1.0f);
+        myScale2D(b->bsizex, b->bsizey);
         glBegin(GL_TRIANGLES);
             glVertex3f( 0.0f ,  2.0f , 0.0f);   // Top
             glVertex3f(-1.0f , -1.0f , 0.0f);   // Bottom Left
@@ -404,6 +409,8 @@ void display () {
     drawPlayer(&player);
     drawEnemy(&enemy);
     Enemyupdate(&enemy);
+    DoCollision(&enemy);
+    
     // Draws the bullets on screen when they are active
     for (i = 0; i < MAX_BULLET_ON_SCREEN; i++) {
         if (bullets[i].active) {
@@ -471,14 +478,15 @@ void drawPlayer (Player *p) {
     glPopMatrix();
 }
 
-void drawEnemy(Enemy *e){
+void drawEnemy (Enemy *e){
+    if(e->Destroyed == false){
     glLineWidth(1.5);
     glEnable( GL_LINE_SMOOTH );
-    glColor3f(1.0f, 0.2f, 1.0f);
+    glColor3f(1.f, 0.2f, 1.0f);
     glPushMatrix();
         glTranslatef(e->x, e->y,-1);
         myRotate2D(e->phi);
-        myScale2D(5,5);
+        myScale2D(e->sizex,e->sizey);
         /* Starting position */
         glBegin(GL_POLYGON);
             glVertex3f(-5.0f, 0.0f, 2.0f);// Top left
@@ -487,6 +495,7 @@ void drawEnemy(Enemy *e){
             glVertex3f(-5.0f,-2.0f, 2.0f);// Bottom Left
         glEnd();
     glPopMatrix();
+    }
 }
 
 void Enemyupdate(Enemy *e)
@@ -494,7 +503,7 @@ void Enemyupdate(Enemy *e)
    
     if(!flag)
     {
-            e->x+=3;
+            e->x+=2;
         if(e->x>win.width)
             flag=1;
     }
@@ -504,5 +513,19 @@ void Enemyupdate(Enemy *e)
             e->x+=-3;
         if(e->x<0)
             flag=0;
+    }
+}  
+
+void DoCollision(Enemy *e)
+{
+    for (int i = 0 ;i<MAX_BULLET_ON_SCREEN; i++)
+    {
+        bool xt = ((bullets[i].x + bullets[i].bsizex >= e->x-e->sizex || bullets[i].x + bullets[i].bsizex >= e->x -2*(e->sizex)) && (e->x + e->sizex >= bullets[i].x-bullets[i].bsizex || e->x + e->sizex >= bullets[i].x -2*(bullets[i].bsizex)));
+        bool yt = ((bullets[i].y + bullets[i].bsizey >= e->y-e->sizex || bullets[i].y + bullets[i].bsizey >= e->y -2*(e->sizex)) && (e->y + e->sizey >= bullets[i].y-bullets[i].bsizey || e->y + e->sizey >= bullets[i].y -2*(bullets[i].bsizey)));
+     if(bullets[i].active == 1 && (xt && yt))
+     {
+        e->Destroyed = true;
+        bullets[i].active = 0;
+     }       
     }
 }
