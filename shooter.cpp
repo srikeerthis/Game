@@ -1,14 +1,11 @@
 #include <stdio.h>
 #include <GL/gl.h>          // Open Graphics Library (OpenGL) header
 #include <GL/freeglut.h>    // The GL Utility Toolkit (GLUT) Header
-#include <time.h>
 #include <stdlib.h>
 #include <math.h>
  
 // Math defines
-#ifndef M_PI
-  #define M_PI 3.14159265358979323846
-#endif
+#define M_PI 3.14159265358979323846
  
 #define RAD2DEG 180.0/M_PI
 #define DEG2RAD M_PI/180.0
@@ -33,16 +30,13 @@
 
 #define SPACEBAR 32
 #define MAX_BULLET_ON_SCREEN 8
+#define MAX_ENEMY_ON_SCREEN 5
 #define MAX_VELO_BULLET 5
  
-typedef struct {
-    int active;
-    double  x, y, dx, dy, bullet_phi,bsizex,bsizey;
-}  Bullet;
  
 static int flag = 0; 
 static int shoot = 0;
-static Bullet bullets[MAX_BULLET_ON_SCREEN]; 
+static int score = 0;
 /* -- type definitions ------------------------------------------------------ */
 typedef struct {
     int width;
@@ -53,11 +47,7 @@ typedef struct {
         float z_near;
         float z_far;
 } glutWindow;
- 
-typedef struct Coords {
-    double x, y;
-} Coords;
- 
+  
 typedef struct {
     double  x, y, phi, dx, dy, vmax, vmax2, sizex,sizey;
 } Player;
@@ -66,6 +56,11 @@ typedef struct {
     double  x, y, phi, dx, dy, vmax, vmax2, sizex,sizey;
     bool Destroyed;
 } Enemy;
+typedef struct {
+    int active;
+    double  x, y, dx, dy, bullet_phi,bsizex,bsizey;
+}  Bullet;
+
  
 /* -- function prototypes --------------------------------------------------- */
  
@@ -77,14 +72,15 @@ void keyPress (int, int, int);
 void keyRelease (int, int, int);
  
 void myTimer (int);
-void Enemyupdate(Enemy *e);
+void Enemyupdate();
 // Player
 void drawPlayer (Player *p);
 void drawEnemy(Enemy *e);
 void movePlayer ();
 void moveBullet();
 void checkMapBoundries ();
-void DoCollision(Enemy *e); 
+void DoCollision(); 
+void updateScore(int);
 // Display
 void display ();
 void myReshape (int, int);
@@ -101,11 +97,9 @@ static int down = 0;
 static int left = 0;
 static int right = 0;
  
-static double x2;
-static double y2;
 static Player player;
-static Enemy enemy;
-static Coords coords;
+static Enemy enemy[MAX_ENEMY_ON_SCREEN];
+static Bullet bullets[MAX_BULLET_ON_SCREEN]; 
  
 /* -- functions ------------------------------------------------------------- */
  
@@ -139,26 +133,22 @@ int main (int argc, char **argv) {
  
 static void initialize () {
  
-    /** PLAYER
-     * set parameters including the numbers photons present,
-     * the maximum velocity of the player, the velocity of the laser shots, the
-     * player's coordinates and velocity, etc.
-     */
+    // Player & enemy -> set parameters including the maximum velocity of the player, the velocity of the laser shots etc
+    int t[MAX_ENEMY_ON_SCREEN]={10,30,40,50,60},s[MAX_ENEMY_ON_SCREEN]={100,150,200,250,300};
     player.x = win.width/2;
     player.y = 30.0;
     player.dx = player. dy = 0;
     player.vmax = MAX_VELO_PLAYER;
     player.vmax2 = MAX_VELO_PLAYER * MAX_VELO_PLAYER;
 
-    enemy.Destroyed = false;
-    enemy.x = 0;
-    enemy.y = win.height/2.0;
-    enemy.dx = enemy. dy = 0;
-    enemy.vmax = MAX_VELO_PLAYER;
-    enemy.vmax2 = MAX_VELO_PLAYER * MAX_VELO_PLAYER;
-    enemy.sizex = 5;
-    enemy.sizey = 5;
- 
+    for(int i=0;i<MAX_ENEMY_ON_SCREEN;i++)
+    {
+    enemy[i].Destroyed = false;
+    enemy[i].x = t[i] ;
+    enemy[i].y = s[i];
+    enemy[i].sizex = 5;
+    enemy[i].sizey = 5;    
+    } 
 }
  
 void keyboard ( unsigned char key, int x , int y) {
@@ -177,10 +167,7 @@ void keyboard ( unsigned char key, int x , int y) {
     }
 }
  
-/**
- *  This function is called when a special key is pressed; we are
- *  interested in the cursor keys only
- */
+// This function is called when a special key is pressed; 
 void keyPress (int key, int x, int y) {
  
     switch (key) {
@@ -205,10 +192,7 @@ void keyPress (int key, int x, int y) {
     }
 }
  
-/**
- *  This function is called when a special key is released; we are
- *  interested in the cursor keys only
- */
+// This function is called when a special key is released
 void keyRelease (int key, int x, int y) {
  
     switch (key) {
@@ -233,16 +217,14 @@ void keyRelease (int key, int x, int y) {
     }
 }
  
-/**
- * Update
- */
+// Update
 void myTimer (int value) {
  
     movePlayer();
     moveBullet();
     checkMapBoundries();
     glutPostRedisplay();
-    glutTimerFunc(30, myTimer, value);      /* 30 frames per second */
+    glutTimerFunc(30, myTimer, value);      // 30 frames per second 
  
 }
  
@@ -312,9 +294,7 @@ void movePlayer () {
  
 } // end movePlayer()
  
-/**
- *  Bullets
- */
+// Bullets
 void moveBullet () {
     int i = 0;
  
@@ -340,9 +320,7 @@ void moveBullet () {
         shoot = 0;
     }
  
-    /* Advance bullets and eliminating those that have gone past
-     * the window boundaries
-     */
+    // Advance bullets and eliminating those that have gone pastthe window boundaries 
     for(i = 0; i < MAX_BULLET_ON_SCREEN; i++) {
  
         if(bullets[i].active == 1) {
@@ -372,9 +350,7 @@ void drawBullet (Bullet *b) {
     glPopMatrix();
 }
 
-/**
- * Map boundaries - prevents player from going out of designated map area
- */
+// Map boundaries - prevents player from going out of designated map area 
 void checkMapBoundries () {
  
     if(player.x > win.width) {
@@ -407,9 +383,12 @@ void display () {
     glTranslatef(0.0f,0.0f,-3.0f);
  
     drawPlayer(&player);
-    drawEnemy(&enemy);
-    Enemyupdate(&enemy);
-    DoCollision(&enemy);
+    for(int i=0;i<MAX_ENEMY_ON_SCREEN;i++)
+    {
+    drawEnemy(&enemy[i]);
+    Enemyupdate();
+    DoCollision();
+    }
     
     // Draws the bullets on screen when they are active
     for (i = 0; i < MAX_BULLET_ON_SCREEN; i++) {
@@ -421,24 +400,18 @@ void display () {
     glutSwapBuffers();
 }
  
-/**
- *  reshape callback function; the aspect ratio is
- *  determined by the aspect ratio of the viewport
- */
 void myReshape (int w, int h) {
  
     glMatrixMode(GL_PROJECTION); // select projection matrix
     glViewport(0, 0, win.width, win.height); // set the viewport
     glMatrixMode(GL_PROJECTION);  // set matrix mode
     glLoadIdentity(); // reset projection matrix
-    //GLfloat aspect = (GLfloat) win.width / win.height;
- 
+   
     glOrtho(0.0, win.width, 0.0, win.height, win.z_near, win.z_far);
-    //gluPerspective(win.field_of_view_angle, aspect, win.z_near, win.z_far);  // set up a perspective projection matrix
- 
+   
     glMatrixMode(GL_MODELVIEW); // specify which matrix is the current matrix
     glShadeModel( GL_SMOOTH );
-    glClearDepth( 1.0f );                                                                                                               // specify the clear value for the depth buffer
+    glClearDepth( 1.0f );   // specify the clear value for the depth buffer
     glEnable( GL_DEPTH_TEST );
     glDepthFunc( GL_LEQUAL );
     glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST ); // specify implementation-specific hints
@@ -446,9 +419,7 @@ void myReshape (int w, int h) {
  
 }
  
-/**
- * Sets game window specifications
- */
+// Sets game window specifications
 void setWindowValues () {
  
     win.width = 640;
@@ -482,10 +453,9 @@ void drawEnemy (Enemy *e){
     if(e->Destroyed == false){
     glLineWidth(1.5);
     glEnable( GL_LINE_SMOOTH );
-    glColor3f(1.f, 0.2f, 1.0f);
+    glColor3f(1.0f, 0.5f, 1.0f);
     glPushMatrix();
         glTranslatef(e->x, e->y,-1);
-        myRotate2D(e->phi);
         myScale2D(e->sizex,e->sizey);
         /* Starting position */
         glBegin(GL_POLYGON);
@@ -498,34 +468,47 @@ void drawEnemy (Enemy *e){
     }
 }
 
-void Enemyupdate(Enemy *e)
+// Updates the motion of enemy
+void Enemyupdate()
 {
-   
-    if(!flag)
-    {
-            e->x+=2;
-        if(e->x>win.width)
-            flag=1;
-    }
+    double t[MAX_ENEMY_ON_SCREEN]={0.75,0.5,1,1.25,1.5};
+   for (int i = 0; i < MAX_ENEMY_ON_SCREEN; ++i)
+   {
+        if(!flag)
+        {
+             enemy[i].x+=t[i];
+        if(enemy[i].x>win.width)
+                flag=1;
+        }
 
-    if(flag)
-    {
-            e->x+=-3;
-        if(e->x<0)
-            flag=0;
+        if(flag)
+        {
+                enemy[i].x+=-(t[i]);
+            if(enemy[i].x<0)
+                flag=0;
+        }      
     }
 }  
 
-void DoCollision(Enemy *e)
+// Check collision between player & enemy or bullet & enemy
+void DoCollision()
 {
-    for (int i = 0 ;i<MAX_BULLET_ON_SCREEN; i++)
+    for (int i = 0 ;i<MAX_BULLET_ON_SCREEN && i<MAX_ENEMY_ON_SCREEN; i++)
     {
-        bool xt = ((bullets[i].x + bullets[i].bsizex >= e->x-e->sizex || bullets[i].x + bullets[i].bsizex >= e->x -2*(e->sizex)) && (e->x + e->sizex >= bullets[i].x-bullets[i].bsizex || e->x + e->sizex >= bullets[i].x -2*(bullets[i].bsizex)));
-        bool yt = ((bullets[i].y + bullets[i].bsizey >= e->y-e->sizex || bullets[i].y + bullets[i].bsizey >= e->y -2*(e->sizex)) && (e->y + e->sizey >= bullets[i].y-bullets[i].bsizey || e->y + e->sizey >= bullets[i].y -2*(bullets[i].bsizey)));
+        bool xt = (bullets[i].x + bullets[i].bsizex >= enemy[i].x-enemy[i].sizex && enemy[i].x + enemy[i].sizex >= bullets[i].x-bullets[i].bsizex);
+        bool yt = (bullets[i].y + bullets[i].bsizey >= enemy[i].y-enemy[i].sizex && enemy[i].y + enemy[i].sizey >= bullets[i].y-bullets[i].bsizey);
      if(bullets[i].active == 1 && (xt && yt))
      {
-        e->Destroyed = true;
+        enemy[i].Destroyed = true;
         bullets[i].active = 0;
+        score = score +1;
+        updateScore(score);
      }       
     }
+}
+
+// Update score
+void updateScore(int x)
+{
+    printf("%d\n",score);
 }
