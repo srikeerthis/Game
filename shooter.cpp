@@ -30,13 +30,19 @@
 
 #define SPACEBAR 32
 #define MAX_BULLET_ON_SCREEN 8
-#define MAX_ENEMY_ON_SCREEN 5
+#define MAX_ENEMY_ON_SCREEN 8
 #define MAX_VELO_BULLET 5
  
  
 static int flag = 0; 
 static int shoot = 0;
 static int score = 0;
+
+float mycolor[][3]={{1,0.5,1},{0,1,0},{0,0.5,1},{0.5,0.5,0},{0.5,0.5,0.5},{0.5,0,0},{0.5,0,0.5},{0,0.5,0.5}};
+int t[MAX_ENEMY_ON_SCREEN]={10,10,10,60,10,70,35},s[MAX_ENEMY_ON_SCREEN]={100,150,200,250,300,350,400,430};
+double dt[MAX_ENEMY_ON_SCREEN]={2.75,0.5,1,1.25,1.5,1.25,1,0.75};
+
+    
 /* -- type definitions ------------------------------------------------------ */
 typedef struct {
     int width;
@@ -75,7 +81,7 @@ void myTimer (int);
 void Enemyupdate();
 // Player
 void drawPlayer (Player *p);
-void drawEnemy(Enemy *e);
+void drawEnemy(int);
 void movePlayer ();
 void moveBullet();
 void checkMapBoundries ();
@@ -86,6 +92,7 @@ void display ();
 void myReshape (int, int);
  
 void setWindowValues ();
+void scoredisplay(int,int,int,int,int);
  
 /* -- global variables ------------------------------------------------------ */
  
@@ -134,7 +141,6 @@ int main (int argc, char **argv) {
 static void initialize () {
  
     // Player & enemy -> set parameters including the maximum velocity of the player, the velocity of the laser shots etc
-    int t[MAX_ENEMY_ON_SCREEN]={10,30,40,50,60},s[MAX_ENEMY_ON_SCREEN]={100,150,200,250,300};
     player.x = win.width/2;
     player.y = 30.0;
     player.dx = player. dy = 0;
@@ -385,10 +391,11 @@ void display () {
     drawPlayer(&player);
     for(int i=0;i<MAX_ENEMY_ON_SCREEN;i++)
     {
-    drawEnemy(&enemy[i]);
+    drawEnemy(i);
+    }
     Enemyupdate();
     DoCollision();
-    }
+    scoredisplay(600,440,-1,1,score);
     
     // Draws the bullets on screen when they are active
     for (i = 0; i < MAX_BULLET_ON_SCREEN; i++) {
@@ -434,7 +441,7 @@ void setWindowValues () {
 void drawPlayer (Player *p) {
  
     glLineWidth(1.5);
-    glEnable( GL_LINE_SMOOTH );
+    //glEnable( GL_LINE_SMOOTH );
     glColor3f(0.2f, 0.9f, 1.0f);
     glPushMatrix();
         myTranslate2D(p->x, p->y);
@@ -449,14 +456,14 @@ void drawPlayer (Player *p) {
     glPopMatrix();
 }
 
-void drawEnemy (Enemy *e){
-    if(e->Destroyed == false){
+void drawEnemy (int i){
+    if(enemy[i].Destroyed == false){
     glLineWidth(1.5);
-    glEnable( GL_LINE_SMOOTH );
-    glColor3f(1.0f, 0.5f, 1.0f);
+    //glEnable( GL_LINE_SMOOTH );
+    glColor3fv(mycolor[i]);
     glPushMatrix();
-        glTranslatef(e->x, e->y,-1);
-        myScale2D(e->sizex,e->sizey);
+        glTranslatef(enemy[i].x, enemy[i].y,-1);
+        myScale2D(enemy[i].sizex,enemy[i].sizey);
         /* Starting position */
         glBegin(GL_POLYGON);
             glVertex3f(-5.0f, 0.0f, 2.0f);// Top left
@@ -471,22 +478,23 @@ void drawEnemy (Enemy *e){
 // Updates the motion of enemy
 void Enemyupdate()
 {
-    double t[MAX_ENEMY_ON_SCREEN]={0.75,0.5,1,1.25,1.5};
-   for (int i = 0; i < MAX_ENEMY_ON_SCREEN; ++i)
+    for (int i = 0; i < MAX_ENEMY_ON_SCREEN; ++i)
    {
-        if(!flag)
-        {
-             enemy[i].x+=t[i];
-        if(enemy[i].x>win.width)
-                flag=1;
-        }
+        if(enemy[i].Destroyed!=true){
+            if(!flag)
+            {
+                 enemy[i].x+=dt[i];
+            if(enemy[i].x>win.width)
+                    flag=1;
+            }
 
-        if(flag)
-        {
-                enemy[i].x+=-(t[i]);
-            if(enemy[i].x<0)
-                flag=0;
-        }      
+            if(flag)
+            {
+                    enemy[i].x+=-(dt[i]);
+                if(enemy[i].x<0)
+                    flag=0;
+            }
+        }          
     }
 }  
 
@@ -495,20 +503,41 @@ void DoCollision()
 {
     for (int i = 0 ;i<MAX_BULLET_ON_SCREEN && i<MAX_ENEMY_ON_SCREEN; i++)
     {
-        bool xt = (bullets[i].x + bullets[i].bsizex >= enemy[i].x-enemy[i].sizex && enemy[i].x + enemy[i].sizex >= bullets[i].x-bullets[i].bsizex);
-        bool yt = (bullets[i].y + bullets[i].bsizey >= enemy[i].y-enemy[i].sizex && enemy[i].y + enemy[i].sizey >= bullets[i].y-bullets[i].bsizey);
-     if(bullets[i].active == 1 && (xt && yt))
-     {
-        enemy[i].Destroyed = true;
-        bullets[i].active = 0;
-        score = score +1;
-        updateScore(score);
-     }       
+         if(enemy[i].Destroyed !=true && bullets[i].active == 1){
+            bool xt = (bullets[i].x + bullets[i].bsizex >= (enemy[i].x ) && enemy[i].x + enemy[i].sizex >= (bullets[i].x));
+            bool yt = (bullets[i].y + bullets[i].bsizey >= (enemy[i].y ) && enemy[i].y + enemy[i].sizey >= (bullets[i].y));
+             if((xt && yt))
+             {
+                bullets[i].active = 0;
+                enemy[i].Destroyed = true;
+                score = score + 1;
+             }
+         }       
     }
 }
 
 // Update score
-void updateScore(int x)
+
+void scoredisplay (int posx, int posy, int posz, int space_char, int scorevar)
 {
-    printf("%d\n",score);
+        int j=0,p,k;
+        GLvoid *font_style1 = GLUT_BITMAP_TIMES_ROMAN_24;
+        p = scorevar;
+        j = 0;
+        k = 0;
+        glRasterPos2i(520, 440);
+        glColor3f(0.0f, 0.0f, 1.0f);
+        const unsigned char* t = reinterpret_cast<const unsigned char *>("Score: ");
+        glutBitmapString(font_style1, t);
+        while(p > 9)
+        {
+            k = p % 10;
+            glRasterPos3f ((posx-(j*space_char)),posy, posz);   
+            glutBitmapCharacter(font_style1,48+k);
+            j++;
+            p /= 10;
+        }
+            glRasterPos3f ((posx-(j*space_char)), posy, posz);   
+            glutBitmapCharacter(font_style1,48+p);
+      glFlush();
 }
