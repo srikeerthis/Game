@@ -36,13 +36,12 @@
  
 static int flag = 0; 
 static int shoot = 0;
-static int eshoot = 0;
 static int score = 0;
 static int countenemy = MAX_ENEMY_ON_SCREEN;
 
 float mycolor[][3]={{1,0.5,1},{0,1,0},{0,0.5,1},{0.5,0.5,0},{0.5,0.5,0.5},{0.5,0,0},{0.5,0,0.5},{0,0.5,0.5}};
-int t[MAX_ENEMY_ON_SCREEN]={10,10,10,60,10,70,35},s[MAX_ENEMY_ON_SCREEN]={100,150,200,250,300,350,400,430};
-double dt[MAX_ENEMY_ON_SCREEN]={2.75,0.5,1,1.25,1.5,1.25,1,0.75};
+int t[MAX_ENEMY_ON_SCREEN]={0,0,0,0,0,0,0,0},s[MAX_ENEMY_ON_SCREEN]={100,150,200,250,300,350,400,430};
+double dt[MAX_ENEMY_ON_SCREEN]={2.75,2.5,2,1.75,1.5,1.25,1,0.75};
 
     
 /* -- type definitions ------------------------------------------------------ */
@@ -83,7 +82,7 @@ void keyRelease (int, int, int);
 void myTimer (int);
 void Enemyupdate();
 // Player
-void drawPlayer (Player *p);
+void drawPlayer ();
 void drawEnemy(int);
 void movePlayer ();
 void moveEnemyBullet(int i);
@@ -163,7 +162,7 @@ static void initialize () {
     enemy[i].y = s[i];
     enemy[i].sizex = 5;
     enemy[i].sizey = 5;
-    enemy[i].phi = (player.x && player.y )+ DEG2RAD* i *  11.5;    
+    enemy[i].phi = - DEG2RAD *180;    
     } 
 }
  
@@ -240,13 +239,13 @@ void myTimer (int value) {
     movePlayer();
     movePlayerBullet();
     }
-    if(countenemy <= MAX_ENEMY_ON_SCREEN)
+    if(countenemy <= MAX_ENEMY_ON_SCREEN ){
     for(int i=0;i<MAX_ENEMY_ON_SCREEN;i++)
     {
         if(enemy[i].Destroyed == false)
             moveEnemyBullet(i);           
     }    
-    
+    }
     checkMapBoundries();
     glutPostRedisplay();
     glutTimerFunc(30, myTimer, value);      // 30 frames per second 
@@ -320,10 +319,8 @@ void movePlayer () {
  
 // Bullets
 void moveEnemyBullet (int i) {
-    eshoot = 1;
     // Give the bullets velocity if shoot is true.
-    if (eshoot == 1) {
-
+    
             if(ebullets[i].active == 0) {
                 ebullets[i].active = 1;
                 ebullets[i].x = enemy[i].x;
@@ -334,11 +331,10 @@ void moveEnemyBullet (int i) {
                 ebullets[i].bsizex = 3;
                 ebullets[i].bsizey = 3;
         }
-    }
+    
  
     // Advance bullets and eliminating those that have gone pastthe window boundaries 
-    for(i = 0; i < MAX_BULLET_ON_SCREEN; i++) {
- 
+    
         if(ebullets[i].active == 1) {
             ebullets[i].x = ebullets[i].x + ebullets[i].dx;
             ebullets[i].y = ebullets[i].y + ebullets[i].dy;
@@ -347,7 +343,6 @@ void moveEnemyBullet (int i) {
         if(ebullets[i].active == 1 && (ebullets[i].x > win.width || ebullets[i].x < 0 || ebullets[i].y > win.height || ebullets[i].y < 0)) {
             ebullets[i].active = 0;
         }
-    }
 } // end moveBullet()
 
 void movePlayerBullet () {
@@ -389,34 +384,32 @@ void movePlayerBullet () {
     }
 } // end moveBullet()
 
-void drawPlayerBullet (Bullet *b) {
+void drawPlayerBullet (int i) {
  
-    glLineWidth(0.5);
     glColor3f(0.9f, 0.0f, 0.0f);
     glPushMatrix();
-        myTranslate2D(b->x, b->y);
-        myRotate2D(b->bullet_phi);
-        myScale2D(b->bsizex, b->bsizey);
+        myTranslate2D(bullets[i].x, bullets[i].y);
+        myRotate2D(bullets[i].bullet_phi);
+        myScale2D(bullets[i].bsizex, bullets[i].bsizey);
         glBegin(GL_TRIANGLES);
-            glVertex3f( 0.0f ,  2.0f , 0.0f);   // Top
-            glVertex3f(-1.0f , -1.0f , 0.0f);   // Bottom Left
-            glVertex3f( 1.0f , -1.0f , 0.0f);   // Bottom Right
+            glVertex2f( 0.0f ,  2.0f );   // Top
+            glVertex2f(-1.0f , -1.0f );   // Bottom Left
+            glVertex2f( 1.0f , -1.0f );   // Bottom Right
         glEnd();
     glPopMatrix();
 }
 
-void drawEnemyBullet(Bullet *eb)
+void drawEnemyBullet(int i)
 {
-     glLineWidth(0.5);
         glColor3f(0.0f, 1.0f, 0.0f);
         glPushMatrix();
-            myTranslate2D(eb->x, eb->y);
-            myRotate2D(eb->bullet_phi);
-            myScale2D(eb->bsizex, eb->bsizey);
+            myTranslate2D(ebullets[i].x, ebullets[i].y);
+            myRotate2D(ebullets[i].bullet_phi);
+            myScale2D(ebullets[i].bsizex, ebullets[i].bsizey);
             glBegin(GL_TRIANGLES);
-                glVertex3f( 0.0f ,  2.0f , 0.0f);   // Top
-                glVertex3f(-1.0f , -1.0f , 0.0f);   // Bottom Left
-                glVertex3f( 1.0f , -1.0f , 0.0f);   // Bottom Right
+                glVertex2f( 0.0f ,  2.0f );   // Top
+                glVertex2f(-1.0f , -1.0f );   // Bottom Left
+                glVertex2f( 1.0f , -1.0f );   // Bottom Right
             glEnd();
         glPopMatrix();   
 }
@@ -455,11 +448,11 @@ void display () {
 
     if(player.Destroyed == false)
     {
-    drawPlayer(&player);
+        drawPlayer();
     }
     for(int i=0;i<MAX_ENEMY_ON_SCREEN;i++)
     {
-    drawEnemy(i);
+        drawEnemy(i);
     }
     Enemyupdate();
     DoCollision();
@@ -471,13 +464,10 @@ void display () {
     // Draws the bullets on screen when they are active
     for (i = 0; i < MAX_BULLET_ON_SCREEN; i++) {
         if (ebullets[i].active) {
-            drawEnemyBullet(&ebullets[i]);
+            drawEnemyBullet(i);
         }
-    }
-
-    for (i = 0; i < MAX_BULLET_ON_SCREEN; i++) {
         if (bullets[i].active) {
-            drawPlayerBullet(&bullets[i]);
+            drawPlayerBullet(i);
         }
     }
 
@@ -515,37 +505,32 @@ void setWindowValues () {
  
 /* -- drawing functions ----------------------------------------------------- */
  
-void drawPlayer (Player *p) {
-    glLineWidth(1.5);
-    //glEnable( GL_LINE_SMOOTH );
+void drawPlayer () {
     glColor3f(0.2f, 0.9f, 1.0f);
     glPushMatrix();
-        myTranslate2D(p->x, p->y);
-        myRotate2D(p->phi);
-        myScale2D(p->sizex,p->sizey);
+        myTranslate2D(player.x, player.y);
+        myRotate2D(player.phi);
+        myScale2D(player.sizex,player.sizey);
         /* Starting position */
         glBegin(GL_TRIANGLES);
-            glVertex3f( 0.0f ,  2.0f , 0.0f);   // Top
-            glVertex3f(-1.0f , -1.0f , 0.0f);   // Bottom Left
-            glVertex3f( 1.0f , -1.0f , 0.0f);   // Bottom Right
+            glVertex2f( 0.0f ,  2.0f );   // Top
+            glVertex2f(-1.0f , -1.0f );   // Bottom Left
+            glVertex2f( 1.0f , -1.0f );   // Bottom Right
         glEnd();
     glPopMatrix();
 }
 
 void drawEnemy (int i){
     if(enemy[i].Destroyed == false){
-    glLineWidth(1.5);
-    //glEnable( GL_LINE_SMOOTH );
     glColor3fv(mycolor[i]);
     glPushMatrix();
-        glTranslatef(enemy[i].x, enemy[i].y,-1);
+        myTranslate2D(enemy[i].x-27 , enemy[i].y);
         myScale2D(enemy[i].sizex,enemy[i].sizey);
         /* Starting position */
         glBegin(GL_POLYGON);
-            glVertex3f(-5.0f, 0.0f, 2.0f);// Top left
-            glVertex3f( 5.0f, 0.0f, 2.0f);// Top Right
-            glVertex3f( 5.0f,-2.0f, 2.0f);// Bottom Right
-            glVertex3f(-5.0f,-2.0f, 2.0f);// Bottom Left
+            glVertex2f( 5.0f, 0.0f );// Top left
+            glVertex2f( 10.0f, 0.0f );// Top Right
+            glVertex2f( 5.0f,-2.0f );// Bottom Right
         glEnd();
     glPopMatrix();
     }
@@ -570,7 +555,9 @@ void Enemyupdate()
                 if(enemy[i].x<0)
                     flag=0;
             }
-        }          
+        }
+        else
+        enemy[i].x = 0;          
     }
 }  
 
@@ -582,15 +569,17 @@ void DoCollision()
     {
          if(enemy[i].Destroyed == false && bullets[i].active == 1){
             xt = (bullets[i].x + bullets[i].bsizex * 3 >= enemy[i].x && enemy[i].x + enemy[i].sizex *5 >= bullets[i].x);
-            yt = (bullets[i].y + bullets[i].bsizey * 3 >= enemy[i].y && enemy[i].y + enemy[i].sizey *5>= bullets[i].y);
+            yt = (bullets[i].y + bullets[i].bsizey * 3 >= enemy[i].y && enemy[i].y + enemy[i].sizey *5 >= bullets[i].y);
 
-            zt = (bullets[i].x + bullets[i].bsizex * 3 <= -(enemy[i].x) && -(enemy[i].x) + -(enemy[i].sizex) *10 <= bullets[i].x);
-            ut = (bullets[i].y + bullets[i].bsizey * 3 <= -(enemy[i].y) && -(enemy[i].y) + -(enemy[i].sizey) *10 <= bullets[i].y);
+            zt = (bullets[i].x + bullets[i].bsizex * 3 <= -(enemy[i].x) && -(enemy[i].x) + -(enemy[i].sizex) *5 <= bullets[i].x);
+            ut = (bullets[i].y + bullets[i].bsizey * 3 <= -(enemy[i].y) && -(enemy[i].y) + -(enemy[i].sizey) *5 <= bullets[i].y);
              
              if(xt && yt || zt && ut)
              {
                 bullets[i].active = 0;
+                ebullets[i].active = 0;
                 enemy[i].Destroyed = true;
+                enemy[i].x = 0;
                 score = score + 1;
                 countenemy = countenemy - 1;
              }
@@ -598,11 +587,12 @@ void DoCollision()
          playxt = player.x + player.sizex * 4 >= enemy[i].x && enemy[i].x + enemy[i].sizex *5 >= player.x;
          playyt = player.y + player.sizey * 4 >= enemy[i].y && enemy[i].y + enemy[i].sizey *5 >= player.y;   
          
-         et = (ebullets[i].x + ebullets[i].bsizex * 3 >= player.x && player.x + player.sizex * 4 >= ebullets[i].x);
-         ft = (ebullets[i].y + ebullets[i].bsizey * 3 >= player.y && player.y + player.sizey * 4 >= ebullets[i].y);
+         et = (ebullets[i].x + ebullets[i].bsizex * 3 >= player.x && player.x + player.sizex * 3 >= ebullets[i].x);
+         ft = (ebullets[i].y + ebullets[i].bsizey * 3 >= player.y && player.y + player.sizey * 3 >= ebullets[i].y);
    
         if(playxt && playyt || et && ft )
         {
+            ebullets[i].active = 0;
             bullets[i].active = 0;
             player.Destroyed = true;
         }
