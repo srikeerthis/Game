@@ -12,7 +12,9 @@
  
 // Keyboard defines
 #define KEY_ESCAPE 27
- 
+#define KEY_ONE 49
+#define KEY_TWO 50
+#define KEY_THREE 51 
 // Keyboard arrows
 #define KEY_UP 101
 #define KEY_DOWN 103
@@ -96,6 +98,8 @@ void myReshape (int, int);
  
 void setWindowValues ();
 void scoredisplay(int,int,int,int,int);
+void mymenu();
+void StartGame();
 void GameOver();
  
 /* -- global variables ------------------------------------------------------ */
@@ -107,6 +111,7 @@ static int up = 0;
 static int down = 0;
 static int left = 0;
 static int right = 0;
+static int menu = 0;
  
 static Player player;
 static Enemy enemy[MAX_ENEMY_ON_SCREEN];
@@ -145,7 +150,7 @@ int main (int argc, char **argv) {
  
 static void initialize () {
  
-    // Player & enemy -> set parameters including the maximum velocity of the player, the velocity of the laser shots etc
+    // Player & enemy -> set parameters including the maximum velocity of the player, the velocity of the rocket shots etc
     player.Destroyed = false;
     player.x = win.width/2;
     player.y = 30.0;
@@ -176,6 +181,15 @@ void keyboard ( unsigned char key, int x , int y) {
             break;
         case SPACEBAR:
             shoot = 1;
+            break;
+        case KEY_ONE:
+            menu = 1;
+            break;
+        case KEY_TWO:
+            menu = 2;
+            break;
+        case KEY_THREE:
+            menu = 3;
             break;
         default:
             break;
@@ -440,36 +454,12 @@ void checkMapBoundries () {
  * Values can be passed to the display callback function only by means of global variables.
  */
 void display () {
-    int i = 0;
- 
+    
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear Screen and Depth Buffer
     glLoadIdentity();
     glTranslatef(0.0f,0.0f,-3.0f);
 
-    if(player.Destroyed == false)
-    {
-        drawPlayer();
-    }
-    for(int i=0;i<MAX_ENEMY_ON_SCREEN;i++)
-    {
-        drawEnemy(i);
-    }
-    Enemyupdate();
-    DoCollision();
-    scoredisplay(600,440,-1,1,score);
-    
-    if(player.Destroyed == true || countenemy == 0)
-        GameOver();
-    
-    // Draws the bullets on screen when they are active
-    for (i = 0; i < MAX_BULLET_ON_SCREEN; i++) {
-        if (ebullets[i].active) {
-            drawEnemyBullet(i);
-        }
-        if (bullets[i].active) {
-            drawPlayerBullet(i);
-        }
-    }
+    mymenu();
 
     glutSwapBuffers();
 }
@@ -644,5 +634,89 @@ void GameOver()
     {
         bullets[i].active=0;
         ebullets[i].active=0;
+    }
+}
+
+//Loads the game
+void StartGame()
+{
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear Screen and Depth Buffer
+
+    if(player.Destroyed == false)
+    {
+        drawPlayer();
+    }
+    for(int i=0;i<MAX_ENEMY_ON_SCREEN;i++)
+    {
+        drawEnemy(i);
+    }
+    Enemyupdate();
+    DoCollision();
+    scoredisplay(600,440,-1,1,score);
+    
+    if(player.Destroyed == true || countenemy == 0)
+        GameOver();
+    
+    // Draws the bullets on screen when they are active
+    for (int i = 0; i < MAX_BULLET_ON_SCREEN; i++) {
+        if (ebullets[i].active) {
+            drawEnemyBullet(i);
+        }
+        if (bullets[i].active) {
+            drawPlayerBullet(i);
+        }
+    }
+}
+
+//Loads the instructions
+void Instructions()
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear Screen and Depth Buffer
+
+    GLvoid *font_style1 = GLUT_BITMAP_TIMES_ROMAN_24;
+    glRasterPos2f(270,240);
+    glColor3f(1.0f, 0.0f, 0.7f);
+    const unsigned char* w = reinterpret_cast<const unsigned char *>("Instructions\n");
+    glutBitmapString(font_style1, w);
+    const unsigned char* o = reinterpret_cast<const unsigned char *>("Objective:\n Evade and destroy all the enemies on screen \n");
+    // const unsigned char* w = reinterpret_cast<const unsigned char *>("Use the UP and DOWN arrow keys - move player ");
+    // const unsigned char* w = reinterpret_cast<const unsigned char *>("Use the Left and Right arrow keys - control the direction of movement");
+    // const unsigned char* w = reinterpret_cast<const unsigned char *>("Space button - Fire a rocket");
+    // const unsigned char* w = reinterpret_cast<const unsigned char *>("Escape to end game and exit as well");
+    glutBitmapString(font_style1, o);   
+}
+
+//Loads the main menu
+void mymenu()
+{
+    GLvoid *font_style1 = GLUT_BITMAP_TIMES_ROMAN_24;
+    glRasterPos2f(240,360);
+    glColor3f(1.0f, 0.0f, 0.7f);
+    const unsigned char* s = reinterpret_cast<const unsigned char *>("Hit a number to select\n");
+    glutBitmapString(font_style1, s);
+    
+    glRasterPos2f(240,260);
+    glColor3f(1.0f, 0.0f, 0.0f);
+    const unsigned char* t = reinterpret_cast<const unsigned char *>("1. Start Game\n");
+    glutBitmapString(font_style1, t);
+    const unsigned char* u = reinterpret_cast<const unsigned char *>("2. Instructions\n");
+    glutBitmapString(font_style1, u);
+    const unsigned char* v = reinterpret_cast<const unsigned char *>("3. Quit\n");
+    glutBitmapString(font_style1, v);  
+
+    switch(menu)
+    {
+        case 1:
+            StartGame();
+            break;
+        case 2:
+            Instructions();
+            break;   
+        case 3:
+            exit(0);
+            break;
+        default:
+            break;     
     }
 }
