@@ -42,7 +42,8 @@ static int score = 0;
 static int countenemy = MAX_ENEMY_ON_SCREEN;
 
 float mycolor[][3]={{1,0.5,1},{0,1,0},{0,0.5,1},{0.5,0.5,0},{0.5,0.5,0.5},{0.5,0,0},{0.5,0,0.5},{0,0.5,0.5}};
-int t[MAX_ENEMY_ON_SCREEN]={0,0,0,0,0,0,0,0},s[MAX_ENEMY_ON_SCREEN]={100,150,200,250,300,350,400,430};
+int t[MAX_ENEMY_ON_SCREEN];
+int s[MAX_ENEMY_ON_SCREEN];
 double dt[MAX_ENEMY_ON_SCREEN]={2.75,2.5,2,1.75,1.5,1.25,1,0.75};
 
     
@@ -150,6 +151,15 @@ int main (int argc, char **argv) {
  
 static void initialize () {
  
+    int space = 380/MAX_ENEMY_ON_SCREEN;
+    
+    for(int i=0;i< MAX_ENEMY_ON_SCREEN;i++)
+    {
+        if(space*i <400)
+        s[i] = 90 + i*space;
+        t[i]=0;
+    }
+
     // Player & enemy -> set parameters including the maximum velocity of the player, the velocity of the rocket shots etc
     player.Destroyed = false;
     player.x = win.width/2;
@@ -518,9 +528,13 @@ void drawEnemy (int i){
         myScale2D(enemy[i].sizex,enemy[i].sizey);
         /* Starting position */
         glBegin(GL_POLYGON);
-            glVertex2f( 5.0f, 0.0f );// Top left
-            glVertex2f( 10.0f, 0.0f );// Top Right
-            glVertex2f( 5.0f,-2.0f );// Bottom Right
+            glVertex2f( 5.0f, 0.0f);// Top left
+            glVertex2f( 10.0f,0.0f);// Top Right
+            glVertex2f( 5.0f,-2.0f);// Bottom Right
+            glVertex2f( 0.0f, 0.0f);
+            glVertex2f( -5.0f, -2.0f);// Top left
+            //glVertex2f( 10.0f,0.0f);// Top Right
+            glVertex2f( 0.0f,-2.0f);
         glEnd();
     glPopMatrix();
     }
@@ -590,7 +604,6 @@ void DoCollision()
 }
 
 // Update score
-
 void scoredisplay (int posx, int posy, int posz, int space_char, int scorevar)
 {
         int j=0,p,k;
@@ -675,16 +688,24 @@ void Instructions()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear Screen and Depth Buffer
 
     GLvoid *font_style1 = GLUT_BITMAP_TIMES_ROMAN_24;
-    glRasterPos2f(270,240);
-    glColor3f(1.0f, 0.0f, 0.7f);
+    glRasterPos2f(270,400);
+    glColor3f(1.0f, 1.0f, 0.7f);
     const unsigned char* w = reinterpret_cast<const unsigned char *>("Instructions\n");
     glutBitmapString(font_style1, w);
-    const unsigned char* o = reinterpret_cast<const unsigned char *>("Objective:\n Evade and destroy all the enemies on screen \n");
-    // const unsigned char* w = reinterpret_cast<const unsigned char *>("Use the UP and DOWN arrow keys - move player ");
-    // const unsigned char* w = reinterpret_cast<const unsigned char *>("Use the Left and Right arrow keys - control the direction of movement");
-    // const unsigned char* w = reinterpret_cast<const unsigned char *>("Space button - Fire a rocket");
-    // const unsigned char* w = reinterpret_cast<const unsigned char *>("Escape to end game and exit as well");
-    glutBitmapString(font_style1, o);   
+    
+    glRasterPos2f(20,340);
+    glColor3f(1.0f, 0.0f, 0.7f);
+    const unsigned char* o = reinterpret_cast<const unsigned char *>("Objective:\nEvade and destroy all the enemies on screen \n");
+    glutBitmapString(font_style1, o);
+    
+    glRasterPos2f(20,240);
+    glColor3f(1.0f, 0.3f, 0.7f);
+    const unsigned char* p = reinterpret_cast<const unsigned char *>("0. Up and Down arrow keys - move player\n");
+    const unsigned char* q = reinterpret_cast<const unsigned char *>("1. Left and Right arrow keys - control the direction\n");
+    const unsigned char* r = reinterpret_cast<const unsigned char *>("2. Space button - Fire a rocket\n3. Esc -end game and exit as well\n");
+    glutBitmapString(font_style1, p);
+    glutBitmapString(font_style1, q);
+    glutBitmapString(font_style1, r);   
 }
 
 //Loads the main menu
