@@ -32,7 +32,7 @@
 
 #define SPACEBAR 32
 #define MAX_BULLET_ON_SCREEN 8
-#define MAX_ENEMY_ON_SCREEN 8
+#define MAX_ENEMY_ON_SCREEN 16
 #define MAX_VELO_BULLET 5
  
  
@@ -41,10 +41,10 @@ static int shoot = 0;
 static int score = 0;
 static int countenemy = MAX_ENEMY_ON_SCREEN;
 
-float mycolor[][3]={{1,0.5,1},{0,1,0},{0,0.5,1},{0.5,0.5,0},{0.5,0.5,0.5},{0.5,0,0},{0.5,0,0.5},{0,0.5,0.5}};
+float mycolor[][3]={{1,0.5,1},{0,1,0},{0,0.5,1},{0.5,0.5,0},{0.5,0.5,0.5},{0.5,0,0},{0.5,0,0.5},{0,0.5,0.5},{1,0.5,1},{0,1,0},{0,0.5,1},{0.5,0.5,0},{0.5,0.5,0.5},{0.5,0.5,0},{0.5,0.5,0.5},{0.5,0.5,0},{0.5,0.5,0.5},{0.5,0.5,0},{0.5,0.5,0.5}};
 int t[MAX_ENEMY_ON_SCREEN];
 int s[MAX_ENEMY_ON_SCREEN];
-double dt[MAX_ENEMY_ON_SCREEN]={2.75,2.5,2,1.75,1.5,1.25,1,0.75};
+double dt[MAX_ENEMY_ON_SCREEN];
 
     
 /* -- type definitions ------------------------------------------------------ */
@@ -157,7 +157,11 @@ static void initialize () {
     {
         if(space*i <400)
         s[i] = 90 + i*space;
+        dt[i] = 2.75-i*0.10;
+        if(i%2==0)
         t[i]=0;
+        else
+        t[i] = win.width-10;
     }
 
     // Player & enemy -> set parameters including the maximum velocity of the player, the velocity of the rocket shots etc
@@ -546,6 +550,7 @@ void Enemyupdate()
     for (int i = 0; i < MAX_ENEMY_ON_SCREEN; ++i)
    {
         if(enemy[i].Destroyed == false){
+            if(i%2 == 0){
             if(!flag)
             {
                  enemy[i].x+=dt[i];
@@ -561,6 +566,23 @@ void Enemyupdate()
             }
         }
         else
+        {
+         if(!flag)
+            {
+                enemy[i].x+=-(dt[i]);
+                if(enemy[i].x<0)
+                    flag=0;
+            }
+
+            if(flag)
+            {
+                enemy[i].x+=dt[i];
+            if(enemy[i].x>win.width)
+                    flag=1;
+            }   
+        }
+    }
+    else
         enemy[i].x = 0;          
     }
 }  
