@@ -32,7 +32,7 @@
 
 #define SPACEBAR 32
 #define MAX_BULLET_ON_SCREEN 8
-#define MAX_ENEMY_ON_SCREEN 16
+#define MAX_ENEMY_ON_SCREEN 12
 #define MAX_VELO_BULLET 5
  
  
@@ -102,6 +102,8 @@ void scoredisplay(int,int,int,int,int);
 void mymenu();
 void StartGame();
 void GameOver();
+void OnDestroy();
+void OnEnemyDestroy(int i);
  
 /* -- global variables ------------------------------------------------------ */
  
@@ -367,7 +369,7 @@ void moveEnemyBullet (int i) {
             ebullets[i].x = ebullets[i].x + ebullets[i].dx;
             ebullets[i].y = ebullets[i].y + ebullets[i].dy;
         }
-        //Bullet Boundries/ Destory bullet outside boundries
+        //Bullet Boundries/ Destroy bullet outside boundries
         if(ebullets[i].active == 1 && (ebullets[i].x > win.width || ebullets[i].x < 0 || ebullets[i].y > win.height || ebullets[i].y < 0)) {
             ebullets[i].active = 0;
         }
@@ -405,7 +407,7 @@ void movePlayerBullet () {
             bullets[i].x = bullets[i].x + bullets[i].dx;
             bullets[i].y = bullets[i].y + bullets[i].dy;
         }
-        //Bullet Boundries/ Destory bullet outside boundries
+        //Bullet Boundries/ Destroy bullet outside boundries
         if(bullets[i].active == 1 && (bullets[i].x > win.width || bullets[i].x < 0 || bullets[i].y > win.height || bullets[i].y < 0)) {
             bullets[i].active = 0;
         }
@@ -537,7 +539,6 @@ void drawEnemy (int i){
             glVertex2f( 5.0f,-2.0f);// Bottom Right
             glVertex2f( 0.0f, 0.0f);
             glVertex2f( -5.0f, -2.0f);// Top left
-            //glVertex2f( 10.0f,0.0f);// Top Right
             glVertex2f( 0.0f,-2.0f);
         glEnd();
     glPopMatrix();
@@ -561,7 +562,7 @@ void Enemyupdate()
             if(flag)
             {
                     enemy[i].x+=-(dt[i]);
-                if(enemy[i].x<0)
+                if(enemy[i].x<5)
                     flag=0;
             }
         }
@@ -570,20 +571,18 @@ void Enemyupdate()
          if(!flag)
             {
                 enemy[i].x+=-(dt[i]);
-                if(enemy[i].x<0)
-                    flag=0;
+                if(enemy[i].x<5)
+                    flag=1;
             }
 
             if(flag)
             {
                 enemy[i].x+=dt[i];
             if(enemy[i].x>win.width)
-                    flag=1;
+                    flag=0;
             }   
         }
     }
-    else
-        enemy[i].x = 0;          
     }
 }  
 
@@ -605,7 +604,6 @@ void DoCollision()
                 bullets[i].active = 0;
                 ebullets[i].active = 0;
                 enemy[i].Destroyed = true;
-                enemy[i].x = 0;
                 score = score + 1;
                 countenemy = countenemy - 1;
              }
@@ -679,15 +677,22 @@ void StartGame()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear Screen and Depth Buffer
 
     if(player.Destroyed == false)
-    {
         drawPlayer();
-    }
+
     for(int i=0;i<MAX_ENEMY_ON_SCREEN;i++)
     {
         drawEnemy(i);
     }
+    
     Enemyupdate();
     DoCollision();
+    if(player.Destroyed == true)
+        OnDestroy();
+
+    for(int i=0;i<MAX_ENEMY_ON_SCREEN;i++)
+        if(enemy[i].Destroyed == true)
+            OnEnemyDestroy(i);
+
     scoredisplay(600,440,-1,1,score);
     
     if(player.Destroyed == true || countenemy == 0)
@@ -762,4 +767,101 @@ void mymenu()
         default:
             break;     
     }
+}
+
+void OnDestroy()
+{
+    glColor3f(0.0f, 0.0f, 1.0f);
+    glPushMatrix();
+        myTranslate2D(player.x-4, player.y-5);
+        myRotate2D(45);
+        myScale2D(player.sizex-2,player.sizey-2);
+        /* Starting position */
+        glBegin(GL_TRIANGLES);
+            glVertex2f( 1.0f , -1.0f );   // Top
+            glVertex2f(-1.0f , -1.0f );   // Bottom Left
+            glVertex2f( 0.0f ,  2.0f );   // Bottom Right
+        glEnd();
+    glPopMatrix();
+
+    glColor3f(0.0f, 0.0f, 1.0f);
+    glPushMatrix();
+        myTranslate2D(player.x+4, player.y+1);
+        myRotate2D(60);
+        myScale2D(player.sizex-1.5,player.sizey-1.5);
+        /* Starting position */
+        glBegin(GL_TRIANGLES);
+            glVertex2f( 0.0f ,  2.0f );   // Top
+            glVertex2f(-1.0f , -1.0f );   // Bottom Left
+            glVertex2f( 1.0f , -1.0f );   // Bottom Right
+        glEnd();
+    glPopMatrix(); 
+
+    glColor3f(0.0f, 0.0f, 1.0f);
+    glPushMatrix();
+        myTranslate2D(player.x, player.y);
+        myRotate2D(30);
+        myScale2D(player.sizex-2.5,player.sizey-2.5);
+        /* Starting position */
+        glBegin(GL_TRIANGLES);
+            glVertex2f( 0.0f ,  2.0f );   // Top
+            glVertex2f(-1.0f , -1.0f );   // Bottom Left
+            glVertex2f( 1.0f , -1.0f );   // Bottom Right
+        glEnd();
+    glPopMatrix();    
+}
+
+void OnEnemyDestroy(int i)
+{
+    glColor3fv(mycolor[i]);
+    glPushMatrix();
+        myTranslate2D(enemy[i].x-4, enemy[i].y-5);
+        myRotate2D(45);
+        myScale2D(enemy[i].sizex-2,enemy[i].sizey-2);
+        /* Starting position */
+        glBegin(GL_TRIANGLES);
+            glVertex2f( 1.0f , -1.0f );   // Top
+            glVertex2f(-1.0f , -1.0f );   // Bottom Left
+            glVertex2f( 0.0f ,  2.0f );   // Bottom Right
+        glEnd();
+    glPopMatrix();
+
+    glColor3fv(mycolor[i]);
+    glPushMatrix();
+        myTranslate2D(enemy[i].x+14, enemy[i].y+11);
+        myRotate2D(60);
+        myScale2D(enemy[i].sizex-1.5,enemy[i].sizey-1.5);
+        /* Starting position */
+        glBegin(GL_TRIANGLES);
+            glVertex2f( 0.0f ,  2.0f );   // Top
+            glVertex2f(-1.0f , -1.0f );   // Bottom Left
+            glVertex2f( 1.0f , -1.0f );   // Bottom Right
+        glEnd();
+    glPopMatrix(); 
+
+    glColor3fv(mycolor[i]);
+    glPushMatrix();
+        myTranslate2D(enemy[i].x, enemy[i].y);
+        myRotate2D(30);
+        myScale2D(enemy[i].sizex-12.5,enemy[i].sizey-12.5);
+        /* Starting position */
+        glBegin(GL_TRIANGLES);
+            glVertex2f( 0.0f ,  2.0f );   // Top
+            glVertex2f(-1.0f , -1.0f );   // Bottom Left
+            glVertex2f( 1.0f , -1.0f );   // Bottom Right
+        glEnd();
+    glPopMatrix();    
+
+    glColor3fv(mycolor[i]);
+    glPushMatrix();
+        myTranslate2D(enemy[i].x, enemy[i].y-15);
+        myRotate2D(70);
+        myScale2D(enemy[i].sizex-2.5,enemy[i].sizey-2.5);
+        /* Starting position */
+        glBegin(GL_TRIANGLES);
+            glVertex2f( 0.0f ,  2.0f );   // Top
+            glVertex2f(-1.0f , -1.0f );   // Bottom Left
+            glVertex2f( 1.0f , -1.0f );   // Bottom Right
+        glEnd();
+    glPopMatrix();    
 }
