@@ -16,8 +16,6 @@
 #define KEY_TWO 50
 #define KEY_THREE 51 
 // Keyboard arrows
-#define KEY_UP 101
-#define KEY_DOWN 103
 #define KEY_LEFT 100
 #define KEY_RIGHT 102
  
@@ -34,19 +32,17 @@
 #define MAX_BULLET_ON_SCREEN 8
 #define MAX_ENEMY_ON_SCREEN 12
 #define MAX_VELO_BULLET 5
- 
- 
+    
 static int flag = 0; 
 static int shoot = 0;
 static int score = 0;
 static int countenemy = MAX_ENEMY_ON_SCREEN;
 
 float mycolor[][3]={{1,0.5,1},{0,1,0},{0,0.5,1},{0.5,0.5,0},{0.5,0.5,0.5},{0.5,0,0},{0.5,0,0.5},{0,0.5,0.5},{1,0.5,1},{0,1,0},{0,0.5,1},{0.5,0.5,0},{0.5,0.5,0.5},{0.5,0.5,0},{0.5,0.5,0.5},{0.5,0.5,0},{0.5,0.5,0.5},{0.5,0.5,0},{0.5,0.5,0.5}};
-int t[MAX_ENEMY_ON_SCREEN];
-int s[MAX_ENEMY_ON_SCREEN];
+int posx[MAX_ENEMY_ON_SCREEN];
+int posy[MAX_ENEMY_ON_SCREEN];
 double dt[MAX_ENEMY_ON_SCREEN];
 
-    
 /* -- type definitions ------------------------------------------------------ */
 typedef struct {
     int width;
@@ -59,7 +55,7 @@ typedef struct {
 } glutWindow;
   
 typedef struct {
-    double  x, y, phi, dx, dy, vmax, vmax2, sizex,sizey;
+    double  x, y, phi, dx, vmax, vmax2, sizex,sizey;
     bool Destroyed;
 } Player;
 
@@ -110,8 +106,6 @@ void OnEnemyDestroy(int i);
 static glutWindow win;
  
 // State of cursor keys
-static int up = 0;
-static int down = 0;
 static int left = 0;
 static int right = 0;
 static int menu = 0;
@@ -153,17 +147,19 @@ int main (int argc, char **argv) {
  
 static void initialize () {
  
-    int space = 380/MAX_ENEMY_ON_SCREEN;
+    int space = (win.height-100)/MAX_ENEMY_ON_SCREEN;
     
     for(int i=0;i< MAX_ENEMY_ON_SCREEN;i++)
     {
-        if(space*i <400)
-        s[i] = 90 + i*space;
+        if(space*i <win.height-80)
+            posy[i] = 90 + i*space;
+        
         dt[i] = 2.75-i*0.10;
+        
         if(i%2==0)
-        t[i]=0;
+            posx[i]=0;
         else
-        t[i] = win.width-10;
+            posx[i] = win.width-10;
     }
 
     // Player & enemy -> set parameters including the maximum velocity of the player, the velocity of the rocket shots etc
@@ -172,15 +168,15 @@ static void initialize () {
     player.y = 30.0;
     player.sizex = 5;
     player.sizey = 5;
-    player.dx = player. dy = 0;
+    player.dx = 0;
     player.vmax = MAX_VELO_PLAYER;
     player.vmax2 = MAX_VELO_PLAYER * MAX_VELO_PLAYER;
 
     for(int i=0;i<MAX_ENEMY_ON_SCREEN;i++)
     {
     enemy[i].Destroyed = false;
-    enemy[i].x = t[i] ;
-    enemy[i].y = s[i];
+    enemy[i].x = posx[i] ;
+    enemy[i].y = posy[i];
     enemy[i].sizex = 5;
     enemy[i].sizey = 5;
     enemy[i].phi = - DEG2RAD *180;    
@@ -219,19 +215,11 @@ void keyPress (int key, int x, int y) {
         case KEY_LEFT:
             left = 1;
             break;
- 
-        case KEY_UP:
-            up = 1;
-            break;
- 
+
         case KEY_RIGHT:
             right = 1;
             break;
- 
-        case KEY_DOWN:
-            down = 1;
-            break;
- 
+
         default:
             break;
     }
@@ -244,19 +232,11 @@ void keyRelease (int key, int x, int y) {
         case KEY_LEFT:
             left = 0;
             break;
- 
-        case KEY_UP:
-            up = 0;
-            break;
- 
+  
         case KEY_RIGHT:
             right = 0;
             break;
- 
-        case KEY_DOWN:
-            down = 0;
-            break;
- 
+
         default:
             break;
     }
@@ -266,16 +246,17 @@ void keyRelease (int key, int x, int y) {
 void myTimer (int value) {
     if(player.Destroyed == false)
     {
-    movePlayer();
-    movePlayerBullet();
+        movePlayer();
+        movePlayerBullet();
     }
     if(countenemy <= MAX_ENEMY_ON_SCREEN ){
-    for(int i=0;i<MAX_ENEMY_ON_SCREEN;i++)
-    {
-        if(enemy[i].Destroyed == false)
-            moveEnemyBullet(i);           
-    }    
+        for(int i=0;i<MAX_ENEMY_ON_SCREEN;i++)
+        {
+            if(enemy[i].Destroyed == false)
+                moveEnemyBullet(i);           
+        }    
     }
+
     checkMapBoundries();
     glutPostRedisplay();
     glutTimerFunc(30, myTimer, value);      // 30 frames per second 
@@ -283,68 +264,43 @@ void myTimer (int value) {
  
 void movePlayer () {
  
-     // Player Rotation
     if(left && right) {
         //do nothing
     }
-     else if(left == 1) {
-         player.phi = player.phi + DEG2RAD * 11.5; //Larger the number the faster it will rotate
-     }
-     else if(right == 1) {
-         player.phi = player.phi - DEG2RAD * 11.5;
-     }
- 
     // Player Movement
-    if(up && down) {
-        // stop player
-        player.dx = 0.0;
-        player.dy = 0.0;
+    else if(left == 1) {
+        player.dx = player.dx - MAX_ACC_PLAYER;
     }
-    // Moves player forwards
-    else if(up == 1) {
-        player.dx = player.dx - MAX_ACC_PLAYER * sin(player.phi);
-        player.dy = player.dy + MAX_ACC_PLAYER * cos(player.phi);
-    }
-    // Moves player backwards
-    else if(down == 1) {
-        player.dx = player.dx + (MAX_ACC_PLAYER - 0.09) * sin(player.phi);
-        player.dy = player.dy - (MAX_ACC_PLAYER - 0.09) * cos(player.phi);
+    else if(right == 1) {
+        player.dx = player.dx + MAX_ACC_PLAYER;
     }
     // Slows player down when up && down movement keys are not pressed
-    else if (up == 0 && down == 0) {
+    else if (left == 0 && right == 0) {
  
         if (player.dx > 0) {
             player.dx -= 0.2;
         }
  
-        if (player.dy > 0) {
-            player.dy -= 0.2;
-        }
- 
-        if (player.dx < 0 || player.dy < 0) {
+        if (player.dx < 0 ) {
             player.dx = 0;
-            player.dy = 0;
         }
     }
  
     double temp;
     //If the player exceeds the max velocity (moving backwards), limit the velocity
-    if(down == 1 && (temp = (player.dx * player.dx + player.dy * player.dy)) > (player.vmax)) {
+    if(right == 1 && (temp = (player.dx * player.dx)) > (player.vmax)) {
         temp = player.vmax / sqrt(temp);
         player.dx *= temp - 0.5;
-        player.dy *= temp - 0.5;
     }
      //If the player exceeds the max velocity (moving forwards), limit the velocity
-    else if((temp = (player.dx * player.dx + player.dy * player.dy)) > player.vmax2) {
+    else if((temp = (player.dx * player.dx)) > player.vmax2) {
         temp = player.vmax / sqrt(temp);
         player.dx *= temp;
-        player.dy *= temp;
     }
  
     // Puts the math in motion
     player.x = player.x + player.dx;
-    player.y = player.y + player.dy;
- 
+
 } // end movePlayer()
  
 // Bullets
@@ -465,10 +421,7 @@ void checkMapBoundries () {
  * The display callback handles exposure events and is called whenever the display must be refreshed.
  * Values can be passed to the display callback function only by means of global variables.
  */
-/**
- * The display callback handles exposure events and is called whenever the display must be refreshed.
- * Values can be passed to the display callback function only by means of global variables.
- */
+
 void display () {
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear Screen and Depth Buffer
@@ -537,9 +490,9 @@ void drawEnemy (int i){
             glVertex2f( 5.0f, 0.0f);// Top left
             glVertex2f( 10.0f,0.0f);// Top Right
             glVertex2f( 5.0f,-2.0f);// Bottom Right
-            glVertex2f( 0.0f, 0.0f);
-            glVertex2f( -5.0f, -2.0f);// Top left
-            glVertex2f( 0.0f,-2.0f);
+            // glVertex2f( 0.0f, 0.0f);
+            // glVertex2f( -5.0f, -2.0f);// Top left
+            // glVertex2f( 0.0f,-2.0f);
         glEnd();
     glPopMatrix();
     }
@@ -590,26 +543,27 @@ void Enemyupdate()
 void DoCollision()
 {
     bool xt,yt,zt,ut,et,ft,playxt,playyt;
-    for (int i = 0 ;i<MAX_BULLET_ON_SCREEN && i<MAX_ENEMY_ON_SCREEN; i++)
+    int i=0,j=0;
+    for ( i = 0,j=0 ;i<MAX_BULLET_ON_SCREEN && j<MAX_ENEMY_ON_SCREEN; i++,j++)
     {
-         if(enemy[i].Destroyed == false && bullets[i].active == 1){
-            xt = (bullets[i].x + bullets[i].bsizex * 3 >= enemy[i].x && enemy[i].x + enemy[i].sizex *5 >= bullets[i].x);
-            yt = (bullets[i].y + bullets[i].bsizey * 3 >= enemy[i].y && enemy[i].y + enemy[i].sizey *5 >= bullets[i].y);
+         if(enemy[j].Destroyed == false && bullets[i].active == 1){
+            xt = (bullets[i].x + bullets[i].bsizex * 3 >= enemy[j].x && enemy[j].x + enemy[j].sizex *5 >= bullets[i].x);
+            yt = (bullets[i].y + bullets[i].bsizey * 3 >= enemy[j].y && enemy[j].y + enemy[j].sizey *5 >= bullets[i].y);
 
-            zt = (bullets[i].x + bullets[i].bsizex * 3 <= -(enemy[i].x) && -(enemy[i].x) + -(enemy[i].sizex) *5 <= bullets[i].x);
-            ut = (bullets[i].y + bullets[i].bsizey * 3 <= -(enemy[i].y) && -(enemy[i].y) + -(enemy[i].sizey) *5 <= bullets[i].y);
+            zt = (bullets[i].x + bullets[i].bsizex * 3 <= -(enemy[j].x) && -(enemy[j].x) + -(enemy[j].sizex) *5 <= bullets[i].x);
+            ut = (bullets[i].y + bullets[i].bsizey * 3 <= -(enemy[j].y) && -(enemy[j].y) + -(enemy[j].sizey) *5 <= bullets[i].y);
              
              if(xt && yt || zt && ut)
              {
                 bullets[i].active = 0;
                 ebullets[i].active = 0;
-                enemy[i].Destroyed = true;
+                enemy[j].Destroyed = true;
                 score = score + 1;
                 countenemy = countenemy - 1;
              }
         }
-         playxt = player.x + player.sizex * 4 >= enemy[i].x && enemy[i].x + enemy[i].sizex *5 >= player.x;
-         playyt = player.y + player.sizey * 4 >= enemy[i].y && enemy[i].y + enemy[i].sizey *5 >= player.y;   
+         playxt = player.x + player.sizex * 4 >= enemy[j].x && enemy[j].x + enemy[j].sizex *5 >= player.x;
+         playyt = player.y + player.sizey * 4 >= enemy[j].y && enemy[j].y + enemy[j].sizey *5 >= player.y;   
          
          et = (ebullets[i].x + ebullets[i].bsizex * 3 >= player.x && player.x + player.sizex * 3 >= ebullets[i].x);
          ft = (ebullets[i].y + ebullets[i].bsizey * 3 >= player.y && player.y + player.sizey * 3 >= ebullets[i].y);
@@ -664,10 +618,9 @@ void GameOver()
         glutBitmapString(font_style1, t);
     }
     for(int i=0;i<MAX_BULLET_ON_SCREEN;i++)
-    {
         bullets[i].active=0;
+    for(int i=0;i<MAX_ENEMY_ON_SCREEN;i++)
         ebullets[i].active=0;
-    }
 }
 
 //Loads the game
@@ -680,9 +633,7 @@ void StartGame()
         drawPlayer();
 
     for(int i=0;i<MAX_ENEMY_ON_SCREEN;i++)
-    {
         drawEnemy(i);
-    }
     
     Enemyupdate();
     DoCollision();
@@ -699,14 +650,14 @@ void StartGame()
         GameOver();
     
     // Draws the bullets on screen when they are active
-    for (int i = 0; i < MAX_BULLET_ON_SCREEN; i++) {
-        if (ebullets[i].active) {
+    for (int i = 0; i < MAX_ENEMY_ON_SCREEN; i++) 
+        if (ebullets[i].active) 
             drawEnemyBullet(i);
-        }
-        if (bullets[i].active) {
+
+    for (int i = 0; i < MAX_BULLET_ON_SCREEN; i++)    
+        if (bullets[i].active) 
             drawPlayerBullet(i);
-        }
-    }
+        
 }
 
 //Loads the instructions
