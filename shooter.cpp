@@ -30,7 +30,7 @@
 
 #define SPACEBAR 32
 #define MAX_BULLET_ON_SCREEN 8
-#define MAX_ENEMY_ON_SCREEN 12
+#define MAX_ENEMY_ON_SCREEN 4
 #define MAX_VELO_BULLET 5
     
 static int flag = 0; 
@@ -154,7 +154,7 @@ static void initialize () {
         if(space*i <win.height-80)
             posy[i] = 90 + i*space;
         
-        dt[i] = 2.75-i*0.10;
+        dt[i] = 1+i*0.10;
         
         if(i%2==0)
             posx[i]=0;
@@ -490,9 +490,9 @@ void drawEnemy (int i){
             glVertex2f( 5.0f, 0.0f);// Top left
             glVertex2f( 10.0f,0.0f);// Top Right
             glVertex2f( 5.0f,-2.0f);// Bottom Right
-            // glVertex2f( 0.0f, 0.0f);
-            // glVertex2f( -5.0f, -2.0f);// Top left
-            // glVertex2f( 0.0f,-2.0f);
+            glVertex2f( 0.0f, 0.0f);
+            glVertex2f( -5.0f, -2.0f);// Top left
+            glVertex2f( 0.0f,-2.0f);
         glEnd();
     glPopMatrix();
     }
@@ -678,9 +678,9 @@ void Instructions()
     
     glRasterPos2f(20,240);
     glColor3f(1.0f, 0.3f, 0.7f);
-    const unsigned char* p = reinterpret_cast<const unsigned char *>("0. Up and Down arrow keys - move player\n");
-    const unsigned char* q = reinterpret_cast<const unsigned char *>("1. Left and Right arrow keys - control the direction\n");
-    const unsigned char* r = reinterpret_cast<const unsigned char *>("2. Space button - Fire a rocket\n3. Esc -end game and exit as well\n");
+    const unsigned char* p = reinterpret_cast<const unsigned char *>("0. Left and Right arrow keys - move player\n");
+    const unsigned char* q = reinterpret_cast<const unsigned char *>("1. Space button - Fire a rocket\n");
+    const unsigned char* r = reinterpret_cast<const unsigned char *>("2. Esc -end game and exit as well\n");
     glutBitmapString(font_style1, p);
     glutBitmapString(font_style1, q);
     glutBitmapString(font_style1, r);   
