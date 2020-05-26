@@ -11,10 +11,13 @@
 #define DEG2RAD M_PI/180.0
  
 // Keyboard defines
-#define KEY_ESCAPE 27
 #define KEY_ONE 49
 #define KEY_TWO 50
 #define KEY_THREE 51 
+#define KEY_FOUR 52 
+
+#define KEY_m 109 
+#define KEY_r 114 
 // Keyboard arrows
 #define KEY_LEFT 100
 #define KEY_RIGHT 102
@@ -96,6 +99,7 @@ void myReshape (int, int);
 void setWindowValues ();
 void scoredisplay(int,int,int,int,int);
 void mymenu();
+void mymenu1();
 void StartGame();
 void GameOver();
 void OnDestroy();
@@ -188,9 +192,6 @@ void keyboard ( unsigned char key, int x , int y) {
     switch (key) {
  
         // Quits game
-        case KEY_ESCAPE:
-            exit (0);
-            break;
         case SPACEBAR:
             shoot = 1;
             break;
@@ -203,6 +204,14 @@ void keyboard ( unsigned char key, int x , int y) {
         case KEY_THREE:
             menu = 3;
             break;
+        case KEY_FOUR:
+            menu = 5;
+            break;    
+        case KEY_m:
+            menu = 4;
+            break; 
+        case KEY_r:
+            menu = 6;   
         default:
             break;
     }
@@ -604,6 +613,8 @@ void scoredisplay (int posx, int posy, int posz, int space_char, int scorevar)
 // Game over text
 void GameOver()
 {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     GLvoid *font_style1 = GLUT_BITMAP_TIMES_ROMAN_24;
     glRasterPos2f(270,240);
     glColor3f(1.0f, 0.0f, 0.7f);
@@ -614,8 +625,10 @@ void GameOver()
     }
     else
     {    
-        const unsigned char* t = reinterpret_cast<const unsigned char *>("Game Over !");
+        const unsigned char* t = reinterpret_cast<const unsigned char *>("Game Over !\n");
         glutBitmapString(font_style1, t);
+        const unsigned char* v = reinterpret_cast<const unsigned char *>("\nHit r to restart!");
+        glutBitmapString(font_style1, v);
     }
     for(int i=0;i<MAX_BULLET_ON_SCREEN;i++)
         bullets[i].active=0;
@@ -689,6 +702,8 @@ void Instructions()
 //Loads the main menu
 void mymenu()
 {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear Screen and Depth Buffer
+
     GLvoid *font_style1 = GLUT_BITMAP_TIMES_ROMAN_24;
     glRasterPos2f(240,360);
     glColor3f(1.0f, 0.0f, 0.7f);
@@ -715,9 +730,34 @@ void mymenu()
         case 3:
             exit(0);
             break;
+        case 4:
+            mymenu1();
+            break;    
         default:
             break;     
     }
+}
+
+void mymenu1()
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear Screen and Depth Buffer
+
+    GLvoid *font_style1 = GLUT_BITMAP_TIMES_ROMAN_24;
+    glRasterPos2f(240,360);
+    glColor3f(1.0f, 0.0f, 0.7f);
+    const unsigned char* s = reinterpret_cast<const unsigned char *>("Hit a number to select\n");
+    glutBitmapString(font_style1, s);
+    
+    glRasterPos2f(240,260);
+    glColor3f(1.0f, 0.0f, 0.0f);
+    const unsigned char* t = reinterpret_cast<const unsigned char *>("1. Resume Game\n");
+    glutBitmapString(font_style1, t);
+    const unsigned char* u = reinterpret_cast<const unsigned char *>("2. Instructions\n");
+    glutBitmapString(font_style1, u);
+    const unsigned char* v = reinterpret_cast<const unsigned char *>("3. Quit\n");
+    glutBitmapString(font_style1, v);  
+    const unsigned char* w = reinterpret_cast<const unsigned char *>("4. Back to main menu\n");
+    glutBitmapString(font_style1, w);  
 }
 
 void OnDestroy()
